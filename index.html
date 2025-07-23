@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Birthday Message Creator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <style>
+        /* Basic styling to ensure full height and font smoothing */
+        html, body, #root {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden; /* Prevent horizontal scroll */
+        }
+        body {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // Note: Direct import statements like 'import { Heart, ... } from "lucide-react";'
+        // still won't work in this setup without a build tool.
+        // We'll rely on global exposure if any, or use the emoji fallbacks.
+        // For 'lucide-react' icons to truly work, you'd need a build process to handle JSX imports.
+        // In this single-file setup, the icons might not display as expected,
+        // hence the emoji fallbacks are important for visual representation.
+        const { Heart, Flower, Sparkles, Star, Gift, Cake, Palette, Download, Share, Copy, Save, FolderOpen } = window['lucide-react'] || {};
+
+        // Thematic template configurations
+        const thematicTemplates = {
+            'floral-spring': {
+                name: 'Floral Spring',
+                icon: Flower ? <Flower className="w-6 h-6" /> : '🌸', // Fallback for icons
+                background: 'bg-gradient-to-br from-pink-300 via-purple-300 to-indigo-400',
+                cardBg: 'bg-white/90 backdrop-blur-sm',
+                textColor: 'text-gray-800',
+                accentColor: 'text-pink-600',
+                decorations: '🌸 🌺 🌷 🌻',
+                pattern: 'floral'
+            },
+            'minimalist-modern': {
+                name: 'Minimalist Modern',
+                icon: Palette ? <Palette className="w-6 h-6" /> : '🎨',
+                background: 'bg-gradient-to-br from-gray-100 to-gray-300',
+                cardBg: 'bg-white shadow-2xl',
+                textColor: 'text-gray-900',
+                accentColor: 'text-blue-600',
+                decorations: '✨ ⭐ ✨ ⭐',
+                pattern: 'minimal'
+            },
+            'neon-cyber': {
+                name: 'Neon Cyber',
+                icon: Sparkles ? <Sparkles className="w-6 h-6" /> : '✨',
+                background: 'bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900',
+                cardBg: 'bg-black/80 backdrop-blur-md border border-cyan-400/50',
+                textColor: 'text-cyan-100',
+                accentColor: 'text-cyan-400',
+                decorations: '⚡ 🔮 ⚡ 🔮',
+                pattern: 'cyber'
+            },
+            'vintage-elegant': {
+                name: 'Vintage Elegant',
+                icon: Heart ? <Heart className="w-6 h-6" /> : '❤️',
+                background: 'bg-gradient-to-br from-amber-100 via-orange-100 to-yellow-100',
+                cardBg: 'bg-amber-50/95 backdrop-blur-sm border-2 border-amber-200',
+                textColor: 'text-amber-900',
+                accentColor: 'text-amber-700',
+                decorations: '🎭 🌹 🎭 🌹',
+                pattern: 'vintage'
+            },
+            'cosmic-galaxy': {
+                name: 'Cosmic Galaxy',
+                icon: Star ? <Star className="w-6 h-6" /> : '⭐',
+                background: 'bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900',
+                cardBg: 'bg-indigo-900/60 backdrop-blur-lg border border-purple-400/30',
+                textColor: 'text-purple-100',
+                accentColor: 'text-purple-300',
+                decorations: '🌟 🌙 ⭐ 🪐',
+                pattern: 'cosmic'
+            },
+            'celebration-party': {
+                name: 'Celebration Party',
+                icon: Gift ? <Gift className="w-6 h-6" /> : '🎁',
+                background: 'bg-gradient-to-br from-red-400 via-yellow-400 to-pink-400',
+                cardBg: 'bg-white/95 backdrop-blur-sm',
+                textColor: 'text-gray-800',
+                accentColor: 'text-red-600',
+                decorations: '🎉 🎊 🎈 🎁',
+                pattern: 'party'
+            }
+        };
+
+        // Message templates by relationship
+        const messageTemplates = {
+            friend: [
+                "Hope your birthday is as amazing as you are! Can't wait to celebrate with you! 🎉",
+                "Another year of awesome adventures ahead! Happy birthday, my friend! 🎊",
+                "Wishing you a day filled with happiness and a year filled with joy! 🎂"
+            ],
+            family: [
+                "Happy birthday to someone who means the world to me! Love you so much! ❤️",
+                "Another year of being blessed to have you in my life! Happy birthday! 🎁",
+                "May all your dreams come true this year! Happy birthday, dear! 🌟"
+            ],
+            colleague: [
+                "Wishing you a fantastic birthday and an even better year ahead! 🎉",
+                "Hope your special day is filled with joy and celebration! Happy birthday! 🎂",
+                "May this new year bring you success and happiness! Happy birthday! 🎊"
+            ],
+            romantic: [
+                "Happy birthday to the love of my life! You make every day special! 💕",
+                "Another year of loving you more and more! Happy birthday, sweetheart! 💖",
+                "You're not just a year older, you're a year more wonderful! Happy birthday! 🌹"
+            ],
+            child: [
+                "Happy birthday to the most awesome kid! Hope your day is full of fun and surprises! 🎈",
+                "Another year of being super cool! Have the best birthday ever! 🎉",
+                "May your birthday be filled with cake, presents, and all your favorite things! 🎁"
+            ]
+        };
+
+        function App() {
+            // Access React hooks from the global React object
+            const [selectedTemplate, setSelectedTemplate] = React.useState('floral-spring');
+            const [formData, setFormData] = React.useState({
+                recipientName: '',
+                senderName: '',
+                age: '',
+                customMessage: '',
+                messageType: 'friend'
+            });
+            const [savedMessages, setSavedMessages] = React.useState([]);
+            const [showSavedMessages, setShowSavedMessages] = React.useState(false);
+
+            // Ref for the message preview element
+            const messagePreviewRef = React.useRef(null);
+
+            // Load saved messages on component mount
+            React.useEffect(() => {
+                const saved = localStorage.getItem('birthdayMessages');
+                if (saved) {
+                    setSavedMessages(JSON.parse(saved));
+                }
+            }, []);
+
+            const handleInputChange = (field, value) => {
+                setFormData(prev => ({ ...prev, [field]: value }));
+            };
+
+            const getCurrentMessage = () => {
+                if (formData.customMessage) {
+                    return formData.customMessage;
+                }
+                const templates = messageTemplates[formData.messageType];
+                // Ensure templates is an array and not empty
+                if (!templates || templates.length === 0) {
+                    return "Happy Birthday!"; // Fallback message
+                }
+                return templates[Math.floor(Math.random() * templates.length)];
+            };
+
+            const saveMessage = () => {
+                if (!formData.recipientName || !formData.senderName) {
+                    alert('Please fill in both recipient and sender names!');
+                    return;
+                }
+
+                const newMessage = {
+                    id: Date.now(),
+                    ...formData,
+                    template: selectedTemplate,
+                    message: getCurrentMessage(),
+                    date: new Date().toLocaleDateString()
+                };
+
+                const updated = [...savedMessages, newMessage];
+                setSavedMessages(updated);
+                localStorage.setItem('birthdayMessages', JSON.stringify(updated));
+                alert('Message saved successfully! 💾');
+            };
+
+            const loadMessage = (message) => {
+                setFormData({
+                    recipientName: message.recipientName,
+                    senderName: message.senderName,
+                    age: message.age,
+                    customMessage: message.customMessage,
+                    messageType: message.messageType
+                });
+                setSelectedTemplate(message.template);
+                setShowSavedMessages(false);
+            };
+
+            const deleteMessage = (id) => {
+                const updated = savedMessages.filter(msg => msg.id !== id);
+                setSavedMessages(updated);
+                localStorage.setItem('birthdayMessages', JSON.stringify(updated));
+            };
+
+            const copyToClipboard = () => {
+                const message = `Happy Birthday ${formData.recipientName}!\n\n${getCurrentMessage()}\n\nWith love,\n${formData.senderName}`;
+                navigator.clipboard.writeText(message);
+                alert('Message copied to clipboard! 📋');
+            };
+
+            const downloadImage = () => {
+                if (!messagePreviewRef.current) {
+                    alert("Could not find the message preview to download.");
+                    return;
+                }
+
+                // Temporarily scroll to top to ensure full capture
+                const originalScrollY = window.scrollY;
+                window.scrollTo(0, 0);
+
+                // html2canvas is globally available due to its CDN link in index.html
+                html2canvas(messagePreviewRef.current, {
+                    scale: 2, // Increase scale for higher resolution
+                    useCORS: true, // Needed if you have images from other domains, though likely not here
+                    backgroundColor: null, // Transparent background if the element itself has transparency
+                }).then(canvas => {
+                    const image = canvas.toDataURL('image/png');
+                    const link = document.createElement('a');
+                    link.href = image;
+                    link.download = `birthday-wish-${formData.recipientName || 'anonymous'}.png`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    alert('Image downloaded! 🖼️');
+                }).catch(error => {
+                    console.error("Error generating image:", error);
+                    alert("Failed to generate image. Please try again or check console for errors.");
+                }).finally(() => {
+                    // Scroll back to original position
+                    window.scrollTo(0, originalScrollY);
+                });
+            };
+
+            const template = thematicTemplates[selectedTemplate];
+
+            return (
+                <div className={`min-h-screen ${template.background} transition-all duration-500`}>
+                    {/* Background Pattern Overlay */}
+                    <div className="absolute inset-0 opacity-10">
+                        {template.pattern === 'floral' && (
+                            <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ff69b4\' fill-opacity=\'0.1\'%3E%3Cpath d=\'M30 30c0-11.046-8.954-20-20-20s-20 8.954-20 20 8.954 20 20 20 20-8.954 20-20zm0 0c0 11.046 8.954 20 20 20s20-8.954 20-20-8.954-20-20-20-20 8.954-20 20z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')]"></div>
+                        )}
+                        {template.pattern === 'cosmic' && (
+                            <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\'40\' height=\'40\' viewBox=\'0 0 40 40\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.05\'%3E%3Cpath d=\'M20 20c0-5.5-4.5-10-10-10s-10 4.5-10 10 4.5 10 10 10 10-4.5 10-10zm10-10v20h20V10H30z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')]"></div>
+                        )}
+                        {template.pattern === 'cyber' && (
+                            <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\'80\' height=\'80\' viewBox=\'0 0 80 80\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%2300ffff\' fill-opacity=\'0.03\'%3E%3Cpath d=\'M0 0h40v40H0V0zm40 40h40v40H40V40z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')]"></div>
+                        )}
+                    </div>
+
+                    <div className="relative z-10 container mx-auto px-4 py-8">
+                        {/* Header */}
+                        <div className="text-center mb-12">
+                            <h1 className={`text-5xl font-bold mb-4 ${template.textColor} drop-shadow-lg`}>
+                                🎂 Birthday Message Creator
+                            </h1>
+                            <p className={`text-xl ${template.textColor} opacity-80`}>
+                                Create beautiful, personalized birthday messages with stunning themes
+                            </p>
+                        </div>
+
+                        <div className="grid lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
+                            {/* Left Panel - Form */}
+                            <div className="space-y-6">
+                                {/* Template Selection */}
+                                <div className={`${template.cardBg} rounded-2xl p-6 shadow-xl`}>
+                                    <h2 className={`text-2xl font-semibold mb-4 ${template.textColor} flex items-center gap-2`}>
+                                        {Palette ? <Palette className="w-6 h-6" /> : '🎨'}
+                                        Choose Your Theme
+                                    </h2>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {Object.entries(thematicTemplates).map(([key, tmpl]) => (
+                                            <button
+                                                key={key}
+                                                onClick={() => setSelectedTemplate(key)}
+                                                className={`p-4 rounded-xl transition-all duration-300 border-2 ${
+                                                    selectedTemplate === key
+                                                        ? 'border-blue-500 shadow-lg scale-105'
+                                                        : 'border-transparent hover:border-gray-300'
+                                                } ${tmpl.cardBg} group`}
+                                            >
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <div className={tmpl.accentColor}>{tmpl.icon}</div>
+                                                    <span className={`font-medium ${tmpl.textColor}`}>{tmpl.name}</span>
+                                                </div>
+                                                <div className="text-sm opacity-70">{tmpl.decorations}</div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Form */}
+                                <div className={`${template.cardBg} rounded-2xl p-6 shadow-xl`}>
+                                    <h2 className={`text-2xl font-semibold mb-4 ${template.textColor} flex items-center gap-2`}>
+                                        {Cake ? <Cake className="w-6 h-6" /> : '🎂'}
+                                        Message Details
+                                    </h2>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className={`block text-sm font-medium mb-2 ${template.textColor}`}>
+                                                Recipient Name *
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formData.recipientName}
+                                                onChange={(e) => handleInputChange('recipientName', e.target.value)}
+                                                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                placeholder="Enter recipient's name"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className={`block text-sm font-medium mb-2 ${template.textColor}`}>
+                                                Your Name *
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formData.senderName}
+                                                onChange={(e) => handleInputChange('senderName', e.target.value)}
+                                                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                placeholder="Enter your name"
+                                            />
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className={`block text-sm font-medium mb-2 ${template.textColor}`}>
+                                                    Age (Optional)
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    value={formData.age}
+                                                    onChange={(e) => handleInputChange('age', e.target.value)}
+                                                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                    placeholder="Age"
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className={`block text-sm font-medium mb-2 ${template.textColor}`}>
+                                                    Relationship
+                                                </label>
+                                                <select
+                                                    value={formData.messageType}
+                                                    onChange={(e) => handleInputChange('messageType', e.target.value)}
+                                                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                >
+                                                    <option value="friend">Friend</option>
+                                                    <option value="family">Family</option>
+                                                    <option value="colleague">Colleague</option>
+                                                    <option value="romantic">Romantic</option>
+                                                    <option value="child">Child</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className={`block text-sm font-medium mb-2 ${template.textColor}`}>
+                                                Custom Message (Optional)
+                                            </label>
+                                            <textarea
+                                                value={formData.customMessage}
+                                                onChange={(e) => handleInputChange('customMessage', e.target.value)}
+                                                rows={4}
+                                                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                                                placeholder="Write your own message or leave blank for auto-generated"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Action Buttons */}
+                                <div className="flex flex-wrap gap-3">
+                                    <button
+                                        onClick={saveMessage}
+                                        className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                                    >
+                                        {Save ? <Save className="w-4 h-4" /> : '💾'}
+                                        Save Message
+                                    </button>
+                                    <button
+                                        onClick={() => setShowSavedMessages(!showSavedMessages)}
+                                        className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                                    >
+                                        {FolderOpen ? <FolderOpen className="w-4 h-4" /> : '📂'}
+                                        Saved Messages
+                                    </button>
+                                    <button
+                                        onClick={copyToClipboard}
+                                        className="flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+                                    >
+                                        {Copy ? <Copy className="w-4 h-4" /> : '📋'}
+                                        Copy Text
+                                    </button>
+                                    <button
+                                        onClick={downloadImage}
+                                        className="flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                                    >
+                                        {Download ? <Download className="w-4 h-4" /> : '🖼️'}
+                                        Download Image
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Right Panel - Preview */}
+                            <div className="space-y-6">
+                                {/* Message Preview */}
+                                <div ref={messagePreviewRef} className={`${template.cardBg} rounded-2xl p-8 shadow-2xl min-h-[500px] flex flex-col justify-center relative overflow-hidden`}>
+                                    {/* Decorative Elements */}
+                                    <div className="absolute top-4 left-4 text-2xl opacity-30">
+                                        {template.decorations.split(' ')[0]}
+                                    </div>
+                                    <div className="absolute top-4 right-4 text-2xl opacity-30">
+                                        {template.decorations.split(' ')[1]}
+                                    </div>
+                                    <div className="absolute bottom-4 left-4 text-2xl opacity-30">
+                                        {template.decorations.split(' ')[2]}
+                                    </div>
+                                    <div className="absolute bottom-4 right-4 text-2xl opacity-30">
+                                        {template.decorations.split(' ')[3]}
+                                    </div>
+
+                                    <div className="text-center space-y-6 relative z-10">
+                                        <div className={`text-4xl font-bold ${template.accentColor} mb-4`}>
+                                            🎂 Happy Birthday!
+                                        </div>
+                                        
+                                        <div className={`text-3xl font-semibold ${template.textColor}`}>
+                                            {formData.recipientName || 'Enter a name to preview'}
+                                        </div>
+
+                                        {formData.age && (
+                                            <div className={`text-xl ${template.accentColor} font-medium`}>
+                                                🎉 {formData.age} Years of Awesome! 🎉
+                                            </div>
+                                        )}
+
+                                        <div className={`text-lg leading-relaxed ${template.textColor} max-w-md mx-auto px-4`}>
+                                            {getCurrentMessage()}
+                                        </div>
+
+                                        <div className={`text-lg font-medium ${template.textColor} pt-6 border-t border-current border-opacity-20`}>
+                                            With love,<br />
+                                            <span className={template.accentColor}>
+                                                {formData.senderName || 'Your Name'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Saved Messages Panel */}
+                                {showSavedMessages && (
+                                    <div className={`${template.cardBg} rounded-2xl p-6 shadow-xl max-h-96 overflow-y-auto`}>
+                                        <h3 className={`text-xl font-semibold mb-4 ${template.textColor}`}>
+                                            Saved Messages ({savedMessages.length})
+                                        </h3>
+                                        {savedMessages.length === 0 ? (
+                                            <p className={`${template.textColor} opacity-60 text-center py-8`}>
+                                                No saved messages yet. Create and save your first message!
+                                            </p>
+                                        ) : (
+                                            <div className="space-y-3">
+                                                {savedMessages.map((message) => (
+                                                    <div key={message.id} className="border border-gray-200 rounded-lg p-4">
+                                                        <div className="flex justify-between items-start mb-2">
+                                                            <div>
+                                                                <h4 className={`font-medium ${template.textColor}`}>
+                                                                    {message.recipientName}
+                                                                </h4>
+                                                                <p className={`text-sm ${template.textColor} opacity-60`}>
+                                                                    From: {message.senderName} • {message.date}
+                                                                </p>
+                                                            </div>
+                                                            <div className="flex gap-2">
+                                                                <button
+                                                                    onClick={() => loadMessage(message)}
+                                                                    className="text-blue-600 hover:text-blue-800 text-sm"
+                                                                >
+                                                                    Load
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => deleteMessage(message.id)}
+                                                                    className="text-red-600 hover:text-red-800 text-sm"
+                                                                >
+                                                                    Delete
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                        <p className={`text-sm ${template.textColor} opacity-80 line-clamp-2`}>
+                                                            {message.message}
+                                                        </p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
