@@ -1,5 +1,5 @@
 
-# 🎂 Birthday Message Creator
+# 🎂 Birthday Message Generator
 
 An interactive web application built with Streamlit, React, and Tailwind CSS for generating and personalizing birthday messages with various themes.
 
